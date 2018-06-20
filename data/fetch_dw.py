@@ -5,8 +5,6 @@ import warnings
 
 import numpy as np
 import pandas as pd
-import pylab as plt
-import seaborn as sns
 import requests
 import tqdm
 from tqdm import tqdm
