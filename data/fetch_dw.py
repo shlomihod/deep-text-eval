@@ -449,6 +449,8 @@ def build_text_df(pages_df):
 
 
 def build_paragraphs_df(text_df):
+    number_paragraphs = text_df["text"].apply(lambda text: len(text.split("\n")))
+
     paragrpahs_rows = []
 
     for _, text_row in text_df[number_paragraphs != 1].iterrows():
@@ -459,6 +461,9 @@ def build_paragraphs_df(text_df):
 
     paragraphs_df = pd.concat([text_df[number_paragraphs == 1],
                            pd.DataFrame(paragrpahs_rows)])
+
+    assert len(paragraphs_df) == number_paragraphs.sum()
+    
     return paragraphs_df
 
 
