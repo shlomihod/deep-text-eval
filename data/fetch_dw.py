@@ -221,6 +221,9 @@ def filter_by_artikel(df):
                   | ((df["rubrik"] == "LEKTIONEN") & (df["artikel"].isin(ARTIKELS["LEKTIONEN"])))]
     return df
 
+def filter_by_nan_level(df):
+    print("Filterring by Levels (no na...)")
+    return df[~df["y"].isna()]
 
 def extract_meta(df):
     """
@@ -429,6 +432,9 @@ def build_pages_df(n_pages=None, to_filter=True):
     pages_df = extract_meta(pages_df)
 
     pages_df = encode_level_labels(pages_df)
+
+    if to_filter:
+        pages = filter_by_nan_level(pages_df)
 
     pages_df = pages_df.reset_index(drop=True)
     print("#pages =", len(pages_df))
