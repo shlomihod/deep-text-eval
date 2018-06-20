@@ -1,16 +1,5 @@
-"""
-TODO
-[x] seperate intro & text
-[x] filter out intro & text
-[x] Lektion checking and new artickle
-[x] change data to page_df
-[ ] split LANGSAM GESPROCHENE NACHRICHTEN to articles - debug and validate `build_text_df`
-[x] seperate script 
-[ ] documentation
-[ ] run it all
-[ ] notebook for corpus analysis
-"""
-
+import os
+import re
 import time
 import warnings
 
@@ -35,7 +24,7 @@ URL_SEARCH_FORMAT = "http://www.dw.com/search/?{item_field}{content_type_field}l
 
 DW_RUBRIK = {"THEMEN": 9077, "DEUTSCH LERNEN": 2055}
 
-LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"]
+LEVELS = ["B1", "B2", "C1"] # "A1", "A2", "C2"
 
 NUM_PARALLEL_REQUESTS = 5
 
@@ -45,8 +34,11 @@ ARTIKELS = {"DEUTSCH LERNEN": {"Nachrichten",                      # B2 & C1 - M
             "LEKTIONEN": {"Top-Thema – Lektionen"},                # B1 - One Text
            }
 
-TEXT_DF_COLUMNS = ["url", "rubrik", "y"]
+TEXT_DF_COLUMNS = ["url", "rubrik", "y", "artikel"]
 
+GLOSSAR_RE = re.compile(r"glossar", re.IGNORECASE)
+NEWLINES_RE = re.compile(r"\s*\n+\s*")
+SPACES_RE = re.compile(r"[ ]+")
 
 def generate_dw_search_url(rubrik, counter=1000, to=None, **kwargs):
     assert rubrik in DW_RUBRIK
@@ -116,9 +108,9 @@ def initialize_pages_df():
                                                  for level in tqdm(LEVELS)))))])
 
                                                  #,
-                     # pd.DataFrame({"rubrik": "THEMEN",
-                     #               "url": list(get_dw_urls("THEMEN",
-                     #                                       limit=2000))})
+                    # pd.DataFrame({"rubrik": "THEMEN",
+                    #                "url": list(get_dw_urls("THEMEN",
+                    #                                        limit=n_themen))})
 
 
     return pages_df
@@ -179,7 +171,7 @@ def fetch_html(df):
     is_full_html_mask = df["html"].str.strip().str.endswith(b"</html>")
     df = df[is_full_html_mask]
 
-    print("Count of articles withh full HTML...")
+    print("Count of articles with full HTML...")
     print(is_full_html_mask.value_counts())
 
     return df
@@ -194,16 +186,18 @@ def soupify(df):
 def enrich_with_lectionen_pages_df(df):
     print("Enriching with LEKTIONEN pages...")
     lektion = df["soup"].apply(lambda soup: soup.find("span", string="Lektion"))
+    if (~lektion.isnull()).any():
+        df = df[lektion.isnull()]
+        lektion = lektion.dropna()
+        lektion_pages_df = build_initial_pages_df("LEKTIONEN",
+                                list(lektion.apply(lambda tag: tag.parent.parent["href"])))
+        lektion_pages_df = fetch_html(lektion_pages_df)
+        lektion_pages_df = soupify(lektion_pages_df)
 
-    df = df[lektion.isnull()]
-    lektion = lektion.dropna()
+        return pd.concat([df, lektion_pages_df])
 
-    lektion_pages_df = build_initial_pages_df("LEKTIONEN",
-                            list(lektion.apply(lambda tag: tag.parent.parent["href"])))
-    lektion_pages_df = fetch_html(lektion_pages_df)
-    lektion_pages_df = soupify(lektion_pages_df)
-
-    return pd.concat([df, lektion_pages_df])
+    else:
+        return df
 
 def extract_artikel(df):
     print("Extracting artikel type...")
@@ -211,6 +205,13 @@ def extract_artikel(df):
                                              soup.find(class_="artikel").get_text())
     return df
 
+
+def filter_by_url(df):
+    print("Filterring by URL (no av type...)")
+    av_url_filter = df["url"].apply(lambda url: url.split("/")[-1].split("-")[0] != "av")
+    print(av_url_filter.value_counts())
+    df = df[av_url_filter]
+    return df
 
 def filter_by_artikel(df):
     print("Filtering by artikel...")
@@ -226,7 +227,7 @@ def extract_meta(df):
     df["title"] = df["soup"].apply(lambda soup:
                                          soup.h1.get_text())
     """
-    
+
     print("Extracting tags...")
     df["tags"]  =  df["soup"].progress_apply(lambda soup:
                         [tag.text for tag in soup
@@ -271,41 +272,64 @@ def extract_intro(soup):
         else:
             return intro
 
-        
+
  ######### TODO: REFACTOR ALL THIS PART #########
+def replace_with_newlines(element):
+    text = ''
+    for elem in element.recursiveChildGenerator():
+        if isinstance(elem, str):
+            text += elem
+        elif elem.name == 'br':
+            text += '\n'
+    return text
+
+
+def get_plain_text(tag):
+    plain_text = ''
+    for line in tag.findAll('p'):
+        line = replace_with_newlines(line)
+        plain_text += line + "\n"
+    return plain_text
+
+
 def paragraphy(tag):
     return "\n".join([paragraph.get_text().strip() for paragraph in tag.find_all("p")])
 
 def extract_content_DEUTSCH_LERNEN_SINGLE(soup):
     paragraphs = []
     long_text_tag = soup.find("div", class_="longText")
+    """
     for tag in long_text_tag.childGenerator():
         if tag.name == "p":
             paragraphs.append(tag.get_text().strip())
-        elif tag.name == "br":
+        elif tag.get_text().strip().lower == "glossar":
             break
-    return "\n".join(paragraphs)
+    """
+    all_text = get_plain_text(long_text_tag).split("Glossar")[0].strip()
+    text = GLOSSAR_RE.split(all_text)[0]
+    return pd.Series({ "title": soup.h1.get_text(),
+             "text": text})
     #return paragraphy(soup.find("div", class_="longText")).split("Glossar", 1)[0].strip()
 
 def extract_content_DEUTSCH_LERNEN_MULTIPLE(soup):
-    return [tag.get_text().strip()
-                for tag in soup.find("div", class_="longText").find_all("p")
-                    if tag.find("strong") is None 
-                        and tag.find("b") is None
-                        and tag.getText().strip()
-                        and not tag.getText().strip().startswith("***")]
-
+    parts = [part.strip()
+     for part in get_plain_text(soup.find("div", class_="longText")).split("\n")
+        if part.strip()]
+    return [pd.Series({"title": title, "text": text})
+            for title, text in zip(parts[::2], parts[1::2])]
 
 def extract_content_THEMEN(soup):
-    return paragraphy(soup.find("div", class_="longText"))
+    return pd.Series({ "title": soup.h1.get_text(), \
+             "text": paragraphy(soup.find("div", class_="longText"))})
 
 def extract_content_LEKTIONEN(soup):
     content_part = list(soup.find("div", class_="dkTaskWrapper tab3").children)[3]
     for definition_bubble in content_part.find_all("span"):
         definition_bubble.decompose()
-    return paragraphy(content_part)
+    return pd.Series({ "title": soup.h1.get_text(),
+             "text": paragraphy(content_part)})
 
-"""
+"""""
 def extract_content(r):
     try:
         if r["rubrik"] == "DEUTSCH LERNEN":
@@ -336,32 +360,32 @@ def extract_text(df):
 def build_text_rows(page_row):
     text_row = page_row.copy()[TEXT_DF_COLUMNS]
     text_rows = []
-    
+
     if page_row["rubrik"] == "DEUTSCH LERNEN":
-    
+
         if page_row["artikel"] == "Top-Thema – Podcast":
-            text_row["text"] = extract_content_DEUTSCH_LERNEN_SINGLE(page_row["soup"])
+            text_row = text_row.append(extract_content_DEUTSCH_LERNEN_SINGLE(page_row["soup"]))
             text_rows = [text_row]
 
         elif page_row["artikel"] in {"Nachrichten", "Langsam gesprochene Nachrichten"}:
-            for text in extract_content_DEUTSCH_LERNEN_MULTIPLE(page_row["soup"]):
+            for content in extract_content_DEUTSCH_LERNEN_MULTIPLE(page_row["soup"]):
                 current_text_row = text_row.copy()
-                current_text_row["text"] = text
+                current_text_row = current_text_row.append(content)
                 text_rows.append(current_text_row)
-    
+
     elif page_row["rubrik"] == "LEKTIONEN" and page_row["artikel"] == "Top-Thema – Lektionen":
-        text_row["text"] = extract_content_LEKTIONEN(page_row["soup"])
+        text_row = text_row.append(extract_content_LEKTIONEN(page_row["soup"]))
         text_rows = [text_row]
-    
+
     elif page_row["rubrik"] == "THEMEN":
-        text_row["text"] = extract_content_THEMEN(page_row["soup"])
+        text_row = text_row.append(extract_content_THEMEN(page_row["soup"]))
         text_rows = [text_row]
-    
+
     return pd.DataFrame(text_rows)
 
  ######### END TODO: REFACTOR ALL THIS PART #########
 
-
+"""
 def handle_article_withot_content(df):
     article_withot_content_mask = df["content"].isnull()
 
@@ -375,12 +399,19 @@ def handle_article_withot_content(df):
         df = df[~article_withot_content_mask]
 
     return df
+"""
+
+def oncify_newline_spaces(text):
+    text = NEWLINES_RE.sub("\n", text)
+    text = SPACES_RE.sub(" ", text)
+    text = text.strip()
+    return text
 
 def build_pages_df(n_pages=None, to_filter=True):
     pages_df = initialize_pages_df()
-    
+
     if n_pages is not None:
-        pages_df = pages_df.sample(n_pages)
+        pages_df = pages_df.sample(n=int(n_pages))
 
     pages_df = fetch_html(pages_df)
     pages_df = soupify(pages_df)
@@ -391,12 +422,15 @@ def build_pages_df(n_pages=None, to_filter=True):
 
     if to_filter:
         pages_df = filter_by_artikel(pages_df)
-    
+        pages_df = filter_by_url(pages_df)
+
+
     pages_df = extract_meta(pages_df)
 
     pages_df = encode_level_labels(pages_df)
 
     pages_df = pages_df.reset_index(drop=True)
+    print("#pages =", len(pages_df))
 
     return pages_df
 
@@ -405,14 +439,43 @@ def build_text_df(pages_df):
     text_rows = [build_text_rows(page_row)
                  for _, page_row in tqdm(pages_df.iterrows(), total=len(pages_df))]
     text_df = pd.concat(text_rows)
+    text_df["text"] = text_df["text"].apply(oncify_newline_spaces)
+
+    text_df = text_df.reset_index()
+    print("#texts =", len(text_df))
+
     return text_df
 
-def main():
-    pages_df = build_pages_df(500)
-    text_df = build_text_df(pages_df)
-#    text_df = handle_article_withot_content(text_df)
 
-    print(text_df.head())
+def build_paragraphs_df(text_df):
+
+    return text_df
+
+
+def save_dataframes(path, pages_df, text_df, paragraphs_df):
+    with pd.HDFStore(os.path.join(path, 'dw.h5')) as dw_store:
+        print("Saving pages_df...")
+        dw_store["pages_df"] = pages_df.drop(["soup", "request"], axis=1)
+
+        print("Saving text_df...")
+        dw_store["text_df"] = text_df
+
+        print("Saving paragraphs_df...")
+        dw_store["paragraphs_df"] = paragraphs_df
+
+
+def main(path: "path to save pages' and text dataframes" = ".",
+         n_pages: "Number of pages to sample" = None):
+    pages_df = build_pages_df(n_pages)
+
+    text_df = build_text_df(pages_df)
+
+    assert text_df["text"].apply(bool).all()
+
+    paragraphs_df = build_paragraphs_df(text_df)
+
+    save_dataframes(path, pages_df, text_df, paragraphs_df)
+
 
 if __name__ == "__main__":
-    main()
+    import plac; plac.call(main)
