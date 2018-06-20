@@ -446,8 +446,17 @@ def build_text_df(pages_df):
 
 
 def build_paragraphs_df(text_df):
+    paragrpahs_rows = []
+    
+    for _, text_row in text_df[number_paragraphs != 1].iterrows():
+        for paragraph in text_row["text"].split("\n"):
+            paragrpahs_row = text_row.copy()
+            paragrpahs_row["text"] = paragraph
+            paragrpahs_rows.append(paragrpahs_row)
 
-    return text_df
+    paragraphs_df = pd.concat([text_df[number_paragraphs == 1],
+                               pd.DataFrame(paragrpahs_rows)])
+   return paragraphs_df
 
 
 def save_dataframes(path, pages_df, text_df, paragraphs_df):
