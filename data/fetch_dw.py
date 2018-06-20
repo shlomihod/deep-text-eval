@@ -449,6 +449,8 @@ def build_text_df(pages_df):
 
 
 def build_paragraphs_df(text_df):
+    print("Bulding Paragraphs Dataframe...")
+
     number_paragraphs = text_df["text"].apply(lambda text: len(text.split("\n")))
 
     paragrpahs_rows = []
@@ -463,7 +465,7 @@ def build_paragraphs_df(text_df):
                            pd.DataFrame(paragrpahs_rows)])
 
     assert len(paragraphs_df) == number_paragraphs.sum()
-    
+
     return paragraphs_df
 
 
