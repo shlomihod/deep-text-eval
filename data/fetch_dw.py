@@ -442,7 +442,7 @@ def build_text_df(pages_df):
     text_df = pd.concat(text_rows)
     text_df["text"] = text_df["text"].apply(oncify_newline_spaces)
 
-    text_df = text_df.reset_index()
+    text_df = text_df.reset_index(drop=True)
     print("#texts =", len(text_df))
 
     return text_df
