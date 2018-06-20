@@ -2,6 +2,7 @@ import os
 import re
 import time
 import warnings
+import resource
 
 import numpy as np
 import pandas as pd
@@ -37,6 +38,8 @@ TEXT_DF_COLUMNS = ["url", "rubrik", "y", "artikel"]
 GLOSSAR_RE = re.compile(r"glossar", re.IGNORECASE)
 NEWLINES_RE = re.compile(r"\s*\n+\s*")
 SPACES_RE = re.compile(r"[ ]+")
+
+resource.setrlimit(resource.RLIMIT_NOFILE, (10000, 10000))
 
 def generate_dw_search_url(rubrik, counter=1000, to=None, **kwargs):
     assert rubrik in DW_RUBRIK
