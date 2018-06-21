@@ -7,7 +7,6 @@ import resource
 import numpy as np
 import pandas as pd
 import requests
-import tqdm
 from tqdm import tqdm
 from bs4 import BeautifulSoup
 
