@@ -277,6 +277,8 @@ def extract_intro(soup):
 
 
  ######### TODO: REFACTOR ALL THIS PART #########
+
+ # https://stackoverflow.com/questions/10491223/how-can-i-turn-br-and-p-into-line-breaks/38861253
 def replace_with_newlines(element):
     text = ''
     for elem in element.recursiveChildGenerator():
@@ -295,9 +297,6 @@ def get_plain_text(tag):
     return plain_text
 
 
-def paragraphy(tag):
-    return "\n".join([paragraph.get_text().strip() for paragraph in tag.find_all("p")])
-
 def extract_content_DEUTSCH_LERNEN_SINGLE(soup):
     paragraphs = []
     long_text_tag = soup.find("div", class_="longText")
@@ -312,7 +311,6 @@ def extract_content_DEUTSCH_LERNEN_SINGLE(soup):
     text = GLOSSAR_RE.split(all_text)[0]
     return pd.Series({ "title": soup.h1.get_text(),
              "text": text})
-    #return paragraphy(soup.find("div", class_="longText")).split("Glossar", 1)[0].strip()
 
 def extract_content_DEUTSCH_LERNEN_MULTIPLE(soup):
     parts = [part.strip()
@@ -323,14 +321,14 @@ def extract_content_DEUTSCH_LERNEN_MULTIPLE(soup):
 
 def extract_content_THEMEN(soup):
     return pd.Series({ "title": soup.h1.get_text(), \
-             "text": paragraphy(soup.find("div", class_="longText"))})
+             "text": get_plain_text(soup.find("div", class_="longText"))})
 
 def extract_content_LEKTIONEN(soup):
     content_part = list(soup.find("div", class_="dkTaskWrapper tab3").children)[3]
     for definition_bubble in content_part.find_all("span"):
         definition_bubble.decompose()
     return pd.Series({ "title": soup.h1.get_text(),
-             "text": paragraphy(content_part)})
+             "text": get_plain_text(content_part)})
 
 """""
 def extract_content(r):
