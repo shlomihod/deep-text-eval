@@ -15,6 +15,8 @@ import pylab as plt
 import matplotlib.patches as mpatches
 import seaborn as sns
 
+from scipy.stats import zscore
+
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.manifold import TSNE
 from sklearn.decomposition import TruncatedSVD, PCA, LatentDirichletAllocation
@@ -75,7 +77,7 @@ def plot_all_counts_dist(df):
     axes[-1].legend()
 
 
-def get_lognest_words(df, n=5):
+def get_lognest_words(df, n=10):
     return ((df["text"]
             .apply(lambda text:
                 max(zip(map(len, text.split()), text.split()))))
@@ -101,6 +103,7 @@ def to_array(vectors):
         vectors = vectors.toarray()
     return vectors
 
+
 def exttract_td_idf_features(df, no_features=1000):
     tf_vectorizer = CountVectorizer(max_df=0.95, min_df=2, max_features=no_features, stop_words='english')
     tf_vectors = tf_vectorizer.fit_transform(df["text"])
@@ -112,9 +115,12 @@ def plot_t_SNE(df, vectors, normalized=False, reduced_dim=50, perplexity=40, tit
     if reduced_dim is not None:
         X_reduced = TruncatedSVD(n_components=50, random_state=0).fit_transform(vectors)
     else:
-        X_reduced = vectors
+        X_reduced = to_array(vectors)
 
-    X_embedded = TSNE(n_components=2, perplexity=40, verbose=1).fit_transform(X_reduced)
+    if normalized:
+        X_reduced = zscore(to_array(X_reduced), axis=0)
+
+    X_embedded = TSNE(n_components=2, perplexity=40, verbose=0).fit_transform(X_reduced)
 
     colors_dict = generate_color_numbers_dict(df["y"])
 
@@ -157,9 +163,11 @@ def classify_SVM(df, vectors):
 
     clf_svm = SGDClassifier(loss='hinge', penalty='l2', alpha=1e-3, n_iter=5, random_state=0)
     clf_svm.fit(X_train, y_train)
+    
     y_pred = clf_svm.predict(X_test)
-
-    return classification_report(y_test, y_pred)
+    accuracy = np.sum(y_pred == y_test) / len(y_test)
+    
+    return classification_report(y_test, y_pred) + '\nAccuracy = {:0.3f}'.format(accuracy)
 
 
 def train_lda(tf_vectors, n_topics=20):
@@ -168,7 +176,7 @@ def train_lda(tf_vectors, n_topics=20):
             learning_method='online',
             learning_offset=50.,
             random_state=0,
-            verbose=True).fit(tf_vectors)
+            verbose=False).fit(tf_vectors)
 
     doc_topics_vectors = lda.transform(tf_vectors)
 
@@ -195,7 +203,10 @@ def generate_descriptive_analysis(df):
 
 def generate_tf_idf_analysis(df, tf_vectors, tf_feature_names):
     plot_PCA(df, tf_vectors, title="TF-IDF")
-    plot_t_SNE(df, tf_vectors, title="TF-IDF")
+    plot_t_SNE(df, tf_vectors, title="TF-IDF Not-Normalized Embedded")    
+    plot_t_SNE(df, tf_vectors, reduced_dim=None, title="TF-IDF Not-Normalized Not-Embedded")    
+    plot_t_SNE(df, tf_vectors, normalized=True, title="TF-IDF Normalized Embedded")
+    plot_t_SNE(df, tf_vectors, normalized=True, reduced_dim=None, title="TF-IDF Normalized Not-Embedded")    
     print("SVM - TF-IDF", classify_SVM(df, tf_vectors))
     print()
 
@@ -204,7 +215,9 @@ def generate_lda_analysis(df, tf_vectors, tf_feature_names):
     lda, doc_topics_vectors = train_lda(tf_vectors, n_topics=20)
     plot_PCA(df, doc_topics_vectors, title="LDA")
     plot_t_SNE(df, doc_topics_vectors, reduced_dim=None, title="LDA")
-    print("SVM - LDA", classify_SVM(df, tf_vectors))
+    plot_t_SNE(df, doc_topics_vectors, normalized=True, reduced_dim=None, title="LDA Normalized")
+    
+    print("SVM - LDA", classify_SVM(df, doc_topics_vectors))
     print()
 
 
