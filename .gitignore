@@ -112,6 +112,9 @@ target/
 # Jupyter Notebook
 .ipynb_checkpoints
 
+# Editor workspace settings
+.vscode
+
 # pyenv
 .python-version
 
