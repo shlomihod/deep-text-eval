@@ -1,10 +1,12 @@
 import itertools as it
 from collections import Counter, deque
 
+import numpy as np
 import spacy
 from spacy import displacy
 from benepar.spacy_plugin import BeneparComponent
-import numpy as np
+from tqdm import tqdm
+
 
 def _count_iter_items(iterable):
     """
@@ -129,4 +131,4 @@ nlp.add_pipe(BeneparComponent("benepar_en_small"))
 nlp.add_pipe(extract_doc_features, name='extract_doc_features', first=False)
 
 def docify_text(texts, batch_size=100, n_threads=4):
-    return [doc for doc in nlp.pipe(texts, batch_size=batch_size, n_threads=n_threads)]
+    return [doc for doc in nlp.pipe(tqdm(texts), batch_size=batch_size, n_threads=n_threads)]
