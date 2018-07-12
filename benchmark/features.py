@@ -5,9 +5,6 @@ import spacy
 from spacy import displacy
 from benepar.spacy_plugin import BeneparComponent
 import numpy as np
-nlp = spacy.load('en', disable=['nre'])
-nlp.add_pipe(BeneparComponent("benepar_en_small"))
-
 
 def _count_iter_items(iterable):
     """
@@ -109,3 +106,27 @@ def tag_counts(doc):
         'num_WRB': tag_counts['WRB'], # wh-adverb
         'num_XX': tag_counts['XX'], # unknown
 }
+
+#######################################################
+
+EXTRACTORS = [
+    syntactic_complexity,
+    tag_counts
+]
+
+
+def extract_doc_features(doc):
+    features = {}
+    for extractor in EXTRACTORS:
+        features.update(extractor(doc))
+    doc._.features = features
+    return doc
+
+spacy.tokens.Doc.set_extension('features', default={}, force=True)
+    
+nlp = spacy.load('en', disable=['nre'])
+nlp.add_pipe(BeneparComponent("benepar_en_small"))
+nlp.add_pipe(extract_doc_features, name='extract_doc_features', first=False)
+
+def docify_text(texts, batch_size=100, n_threads=4):
+    return [doc for doc in nlp.pipe(texts, batch_size=batch_size, n_threads=n_threads)]
