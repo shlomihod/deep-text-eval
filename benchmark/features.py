@@ -1,7 +1,12 @@
 import itertools as it
 from collections import Counter, deque
 
+import spacy
+from spacy import displacy
+from benepar.spacy_plugin import BeneparComponent
 import numpy as np
+nlp = spacy.load('en', disable=['nre'])
+nlp.add_pipe(BeneparComponent("benepar_en_small"))
 
 
 def _count_iter_items(iterable):
@@ -20,11 +25,27 @@ def _calc_depth(span):
         return 0
     else:
         return max(_calc_depth(child) for child in children) + 1
-    
-    
+
+
+def _count_constituent(doc):
+    """Counts the constituents in a given document."""
+    constituent_counter = Counter()
+    for sent in doc.sents:
+        for const in sent._.constituents:
+            constituent_counter.update(Counter(const._.labels))
+
+    return constituent_counter
+
+
 def syntactic_complexity(doc):
+    constituent_counter = _count_constituent(doc)
+    n_sentences = _count_iter_items(doc.sents)
     return {
-        'avgparsetreeheight': np.mean([_calc_depth(sent) for sent in doc.sents]), # average height of a parse Tree
+        'avgparsetreeheight': np.mean([_calc_depth(sent) for sent in doc.sents]),  # average height of a parse Tree
+        'senlen': np.mean([len(sent) for sent in doc.sents]),     # average sentence length
+        'numnp': constituent_counter["NP"] / n_sentences,         # noun phrases (NP) / sentences
+        'numpp': constituent_counter["PP"] / n_sentences,         # prepositional phrases (PP) / sentences
+        'numclauses': constituent_counter["SBAR"] / n_sentences,  # clauses/sentences
     }
 
 
