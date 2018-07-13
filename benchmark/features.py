@@ -42,9 +42,9 @@ def syntactic_complexity(doc):
     return {
         'avgparsetreeheight': np.mean([_calc_depth(sent) for sent in doc.sents]),  # average height of a parse Tree
         'senlen': np.mean([len(sent) for sent in doc.sents]),     # average sentence length
-        'numnp': constituent_counter["NP"] / n_sentences,         # noun phrases (NP) / sentences
-        'numpp': constituent_counter["PP"] / n_sentences,         # prepositional phrases (PP) / sentences
-        'numclauses': constituent_counter["SBAR"] / n_sentences,  # clauses/sentences
+        'numnp': constituent_counter['NP'] / n_sentences,         # noun phrases (NP) / sentences
+        'numpp': constituent_counter['PP'] / n_sentences,         # prepositional phrases (PP) / sentences
+        'numsbar': constituent_counter['SBAR'] / n_sentences,  # SBARs/sentences
     }
 
 
