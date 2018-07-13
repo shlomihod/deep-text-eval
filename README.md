@@ -21,13 +21,17 @@ articles, with two these columns:
 1. `text` - The text itself.
 2. `y` - The level label (integer, stating from `0`), as described below.
 
+### Train-Test Split
+80%-20% with shuffle
 
-### Usage in Python
+### Usage in Python (Example with the Weebit Corpus)
 ```python
 import pandas as pd
 
-with pd.HDFStore('data/dw.h5') as dw_store:
-	text_df = dw_store['text_df']
+with pd.HDFStore('data/weebit/weebit.h5') as weebit_store:
+	text_df = weebit_store['text_df']
+	train_df = weebit_store['train_df']
+	test_df = weebit_store['test_df']
 ```
 
 ### Corpora
@@ -56,7 +60,18 @@ Computational Linguistics. 2012.
 3 - BitKS3 (Age 11-14)
 4 - BitGCSE (Age 14-16)
 ```
+##### Train-Test Datasets
+The `BitGCSE` class has ~x5 texts than the other classes, therefore it was
+downsampled to 800 texts after all the cleaning and preprocessing.
 
+```
+level  #text  %text  #train  %train  #test  %test
+0      607    16.70  486     16.71   121    16.64
+1      788    21.68  630     21.66   158    21.73
+2      798    21.95  638     21.94   160    22.01
+3      642    17.66  514     17.68   128    17.61
+4      800    22.01  640     22.01   160    22.01
+```
 
 #### GEO
 ##### Levels
