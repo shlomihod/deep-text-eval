@@ -91,7 +91,7 @@ def plot_FKG(df):
     f, ax = plt.subplots(1)
     df["FKG"] = df["text"].apply(textstat.flesch_kincaid_grade)
 
-    for y in df["y"].unique():
+    for y in sorted(df["y"].unique()):
         sns.distplot(df[df["y"] == y]["FKG"], label=str(y), ax=ax)
 
     ax.legend()
