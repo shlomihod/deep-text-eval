@@ -48,6 +48,13 @@ def syntactic_complexity(doc):
     }
 
 
+def celex_complexity(doc):
+    constituent_counter = _count_constituent(doc)
+    return {
+        'numprep': constituent_counter["PP"],  # for every PP, there is exactly one preposition
+    }
+
+
 def tag_counts(doc):
     tag_counts = Counter([token.tag_ for token in doc])
     return {
@@ -113,6 +120,7 @@ def tag_counts(doc):
 
 EXTRACTORS = [
     syntactic_complexity,
+    celex_complexity,
     tag_counts
 ]
 
