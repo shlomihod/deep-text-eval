@@ -73,6 +73,42 @@ level  #text  %text  #train  %train  #test  %test
 4      800    22.00  640     22.01   160    21.98
 ```
 
+#### Newsla
+##### Levels
+###### Continious y
+```
+Range 0 - MAX (=1300)
+```
+
+###### Discrete y_cat (by percentiles without MAX)
+```
+0, 1, 2, 3 and 4 (MAX)
+```
+
+##### Train-Test Datasets
+
+###### Continious y
+```
+y   name      #  min   max        mean         std
+0   text  14559  310  1300  971.421114  254.112797
+1  train  11647  310  1300  971.541169  253.706888
+2   test   2912  330  1300  970.940934  255.773070
+
+train-test Kolmogorov-Smirnov p-value 0.9677472583813295
+```
+
+###### Discrete y_cat (by percentiles without MAX)
+```
+     #text  %text  #train  %train  #test  %test
+0.0   1973  13.55    1566   13.45    407  13.98
+1.0   3842  26.39    3075   26.40    767  26.34
+2.0   3835  26.34    3078   26.43    757  26.00
+3.0   2004  13.76    1606   13.79    398  13.67
+4.0   2905  19.95    2322   19.94    583  20.02
+
+```
+
+
 #### GEO
 ##### Levels
 ```
