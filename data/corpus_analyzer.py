@@ -21,6 +21,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.manifold import TSNE
 from sklearn.decomposition import TruncatedSVD, PCA, LatentDirichletAllocation
 from sklearn.linear_model import SGDClassifier
+from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 
@@ -65,7 +66,7 @@ def plot_count_dist(df, count_type, ax=None):
         ax.legend()
     ax.set_title(count_type)
 
-    for y in df["y"].unique():
+    for y in sorted(df["y"].unique()):
         sns.distplot(df[df["y"] == y][count_type], label=str(y), ax=ax)
 
 
@@ -157,11 +158,17 @@ def plot_PCA(df, vectors, title=""):
         for label, color in colors_dict.items()])
 
 
-def classify_SVM(df, vectors):
+def classify_SVM(df, vectors, model):
     X_train, X_test, y_train, y_test = train_test_split(
         to_array(vectors), df["y"], test_size=0.2, random_state=42)
 
-    clf_svm = SGDClassifier(loss='hinge', penalty='l2', alpha=1e-3, n_iter=5, random_state=0)
+    if model == 'SGDClassifier':
+        clf_svm = SGDClassifier(loss='hinge', penalty='l2', alpha=1e-3, n_iter=5, random_state=0)
+    elif model == 'SVC':
+        clf_svm = SVC(random_state=0)
+    else:
+        raise ValueError
+        
     clf_svm.fit(X_train, y_train)
     
     y_pred = clf_svm.predict(X_test)
@@ -207,7 +214,10 @@ def generate_tf_idf_analysis(df, tf_vectors, tf_feature_names):
     plot_t_SNE(df, tf_vectors, reduced_dim=None, title="TF-IDF Not-Normalized Not-Embedded")    
     plot_t_SNE(df, tf_vectors, normalized=True, title="TF-IDF Normalized Embedded")
     plot_t_SNE(df, tf_vectors, normalized=True, reduced_dim=None, title="TF-IDF Normalized Not-Embedded")    
-    print("SVM - TF-IDF", classify_SVM(df, tf_vectors))
+    
+    print("SVM SGDClassifier - TF-IDF", classify_SVM(df, tf_vectors, 'SGDClassifier'))
+    print()
+    print("SVM SVC (RBF) - TF-IDF", classify_SVM(df, tf_vectors, 'SGDClassifier'))
     print()
 
 
@@ -217,7 +227,9 @@ def generate_lda_analysis(df, tf_vectors, tf_feature_names):
     plot_t_SNE(df, doc_topics_vectors, reduced_dim=None, title="LDA")
     plot_t_SNE(df, doc_topics_vectors, normalized=True, reduced_dim=None, title="LDA Normalized")
     
-    print("SVM - LDA", classify_SVM(df, doc_topics_vectors))
+    print("SVM SGDClassifier - LDA", classify_SVM(df, doc_topics_vectors, 'SGDClassifier'))
+    print()
+    print("SVM SVC (RBF) - LDA", classify_SVM(df, doc_topics_vectors, 'SGDClassifier'))
     print()
 
 
