@@ -1,5 +1,5 @@
 import itertools as it
-from collections import Counter, deque
+from collections import Counter, deque, defaultdict
 
 import numpy as np
 import spacy
@@ -18,38 +18,53 @@ def _count_iter_items(iterable):
     return next(counter)
 
 
-def _calc_depth(span):
+def _calc_height(span):
     children = list(span._.children)
     if not children:
         return 0
     else:
-        return max(_calc_depth(child) for child in children) + 1
+        return max(_calc_height(child) for child in children) + 1
 
 
-def _count_constituent(doc):
+def _extract_constituent(doc):
     """Counts the constituents in a given document."""
     constituent_counter = Counter()
+    constituent_lens = defaultdict(list)
     for sent in doc.sents:
         for const in sent._.constituents:
             constituent_counter.update(Counter(const._.labels))
-
-    return constituent_counter
+            for label in const._.labels:
+                constituent_lens[label].append(len(const))
+    
+    return constituent_counter, constituent_lens
 
 
 def syntactic_complexity(doc):
-    constituent_counter = _count_constituent(doc)
+    constituent_counter, constituent_lens = _extract_constituent(doc)
     n_sentences = _count_iter_items(doc.sents)
     return {
-        'avgparsetreeheight': np.mean([_calc_depth(sent) for sent in doc.sents]),  # average height of a parse Tree
+        
         'senlen': np.mean([len(sent) for sent in doc.sents]),     # average sentence length
-        'numnp': constituent_counter['NP'] / n_sentences,         # noun phrases (NP) / sentences
-        'numpp': constituent_counter['PP'] / n_sentences,         # prepositional phrases (PP) / sentences
+        
+        'numnp': constituent_counter['NP'] / n_sentences,         # NPs / sentences
+        'numpp': constituent_counter['PP'] / n_sentences,         # PPs / sentences
+        'numvp': constituent_counter['VP'] / n_sentences,         # VPs/sentences	
         'numsbar': constituent_counter['SBAR'] / n_sentences,  # SBARs/sentences
+        
+        'avgnpsize': np.mean(constituent_lens['NP']),  # average length of an NP
+        'avgvpsize': np.mean(constituent_lens['VP']),  # average length of an VP
+        'avgppsize': np.mean(constituent_lens['PP']),  # average length of an PP
+        
+        'avgparsetreeheight': np.mean([_calc_height(sent) for sent in doc.sents]),  # average height of a parse Tree
+
+        'numconstituents': sum(constituent_counter.values()) / n_sentences, #constituents/sentences	
+        
     }
 
 
 def celex_complexity(doc):
-    constituent_counter = _count_constituent(doc)
+    # TODO: why do we call `_extract_constituent` twice?
+    constituent_counter, _ = _extract_constituent(doc)
     return {
         'numprep': constituent_counter["PP"],  # for every PP, there is exactly one preposition
     }
