@@ -209,7 +209,7 @@ def main(path):
         test_df = store['test_df']
     
     print('Extracting features...')
-    docs = features.docify_text(text_df['text'])
+    docs = docify_text(text_df['text'])
     features_df = pd.DataFrame([doc._.features for doc in docs],
                                  index=text_df.index)
     features_df.columns = 'featues_' + features_df.columns
