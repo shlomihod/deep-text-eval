@@ -281,10 +281,10 @@ def main(path):
     assert len(test_df) == len(test_features_df)
 
     print('Saving DFs...')
-    with pd.HDFStore(path) as store:
-        text_features_df = store['text_features_df']
-        train_features_df = store['train_features_df']
-        test_features_df = store['test_features_df']
+    with pd.HDFStore(path, 'a') as store:
+        store['text_features_df'] = text_features_df
+        store['train_features_df'] = train_features_df
+        store['test_features_df'] = test_features_df
 
 
 init()
