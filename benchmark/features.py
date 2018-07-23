@@ -97,7 +97,7 @@ def pos_density(doc):
         'num_comma': tag_counts[','] / n_sentences, # punctuation mark, comma / sentences
         'nouns': (pos_counts['NOUN'] + pos_counts['PROPN']) / n_tokens, # (nouns + proper nouns)/all words
         'propernouns': pos_counts['PROPN'] / n_tokens, # proper nouns/all words
-        'pronouns': (pos_counts['PRP'] + pos_counts['PRP$']) / n_tokens, # pronouns/all words
+        'pronouns': (tag_counts['PRP'] + tag_counts['PRP$']) / n_tokens, # pronouns/all words
 
         # should we use ADP here?!?!
         'conj': (pos_counts['CONJ'] + pos_counts['ADP']) / n_tokens,  # conjunctions/all words
@@ -107,7 +107,7 @@ def pos_density(doc):
         'interj': pos_counts['INTJ'] / n_sentences, # interjections/total sentences
         'adverbs': pos_counts['ADV'] / n_sentences, # adverbs/total sentences
         'modals': tag_counts['MD'] / n_sentences, # modal verbs/total sentences
-        'perpro': pos_counts['PRP'] / n_sentences, # personal pronouns/total sentences
+        'perpro': tag_counts['PRP'] / n_sentences, # personal pronouns/total sentences
         'whpro': (tag_counts['WP'] + tag_counts['WP$']) / n_sentences, # wh- pronouns/total sentences
         'numfuncwords': (tag_counts['BES'] + tag_counts['CC']
                         + tag_counts['DT'] + tag_counts['EX']
