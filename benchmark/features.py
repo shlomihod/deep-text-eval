@@ -13,7 +13,7 @@ from tqdm import tqdm
 nlp = None
 
 def _mean_with_empty(seq):
-    if seq:
+    if not seq:
         return 0.
     else:
         return np.mean(seq)
