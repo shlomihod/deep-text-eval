@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-    
+
 import itertools as it
 from collections import Counter, deque, defaultdict
 
@@ -12,6 +12,11 @@ from tqdm import tqdm
 
 nlp = None
 
+def _mean_with_empty(seq):
+    if seq:
+        return 0.
+    else:
+        return np.mean(seq)
 
 def _count_iter_items(iterable):
     """
@@ -40,7 +45,7 @@ def _extract_constituent(doc):
             constituent_counter.update(Counter(const._.labels))
             for label in const._.labels:
                 constituent_lens[label].append(len(const))
-    
+
     return constituent_counter, constituent_lens
 
 
@@ -48,26 +53,26 @@ def syntactic_complexity(doc):
     constituent_counter, constituent_lens = _extract_constituent(doc)
     n_sentences = _count_iter_items(doc.sents)
     return {
-        
-        'senlen': np.mean([len(sent) for sent in doc.sents]),     # average sentence length
-        
+
+        'senlen': _mean_with_empty([len(sent) for sent in doc.sents]),     # average sentence length
+
         'numnp': constituent_counter['NP'] / n_sentences,         # NPs / sentences
         'numpp': constituent_counter['PP'] / n_sentences,         # PPs / sentences
-        'numvp': constituent_counter['VP'] / n_sentences,         # VPs/sentences	
+        'numvp': constituent_counter['VP'] / n_sentences,         # VPs/sentences
         'numsbar': constituent_counter['SBAR'] / n_sentences,  # SBARs/sentences
         'numsbarq': constituent_counter['SBARQ'] / n_sentences,  # SBARQs/sentences (questions?)
         'numwh': np.sum([constituent_counter[label] for label in constituent_counter
-                            if label.startswith('WH')]) / n_sentences,  # WHs/sentences 
-        
-        'avgnpsize': np.mean(constituent_lens['NP']),  # average length of an NP
-        'avgvpsize': np.mean(constituent_lens['VP']),  # average length of an VP
-        'avgppsize': np.mean(constituent_lens['PP']),  # average length of an PP
-        
-        	#wh-phrases/sentences	 
-        'avgparsetreeheight': np.mean([_calc_height(sent) for sent in doc.sents]),  # average height of a parse Tree
+                            if label.startswith('WH')]) / n_sentences,  # WHs/sentences
 
-        'numconstituents': sum(constituent_counter.values()) / n_sentences, #constituents/sentences	
-        
+        'avgnpsize': _mean_with_empty(constituent_lens['NP']),  # average length of an NP
+        'avgvpsize': _mean_with_empty(constituent_lens['VP']),  # average length of an VP
+        'avgppsize': _mean_with_empty(constituent_lens['PP']),  # average length of an PP
+
+        	#wh-phrases/sentences
+        'avgparsetreeheight': _mean_with_empty([_calc_height(sent) for sent in doc.sents]),  # average height of a parse Tree
+
+        'numconstituents': sum(constituent_counter.values()) / n_sentences, #constituents/sentences
+
     }
 
 
@@ -82,22 +87,22 @@ def celex_complexity(doc):
 def pos_density(doc):
     tag_counts = Counter([token.tag_ for token in doc])
     pos_counts = Counter([token.pos_ for token in doc])
-    
+
     n_sentences = _count_iter_items(doc.sents)
 
     # we use tokens and not word as in the phd, maybe we should change it
     n_tokens = sum([len(sent) for sent in doc.sents])
-    
+
     return {
         'num_comma': tag_counts[','] / n_sentences, # punctuation mark, comma / sentences
         'nouns': (pos_counts['NOUN'] + pos_counts['PROPN']) / n_tokens, # (nouns + proper nouns)/all words
         'propernouns': pos_counts['PROPN'] / n_tokens, # proper nouns/all words
         'pronouns': (pos_counts['PRP'] + pos_counts['PRP$']) / n_tokens, # pronouns/all words
-        
+
         # should we use ADP here?!?!
-        'conj': (pos_counts['CONJ'] + pos_counts['ADP']) / n_tokens,  # conjunctions/all words	
-        
-        'adj': pos_counts['ADJ'] / n_tokens, # adjectives/all words	
+        'conj': (pos_counts['CONJ'] + pos_counts['ADP']) / n_tokens,  # conjunctions/all words
+
+        'adj': pos_counts['ADJ'] / n_tokens, # adjectives/all words
         'ver': (pos_counts['VERB'] - tag_counts['MD']) / n_tokens, # non-modal verbs/all words
         'interj': pos_counts['INTJ'] / n_sentences, # interjections/total sentences
         'adverbs': pos_counts['ADV'] / n_sentences, # adverbs/total sentences
@@ -116,8 +121,8 @@ def pos_density(doc):
         'numvbg' : tag_counts['VBG'] / n_sentences, # VBG tags/total sentences
         'numvbn' : tag_counts['VBN'] / n_sentences, # VBN tags/total sentences
         'numvbp' : tag_counts['VBP'] / n_sentences, # VBP tags/total sentences
- 	}	
-        
+ 	}
+
         # 'num_-LRB-': tag_counts['-LRB-'], # left round bracket
         # 'num_-RRB-': tag_counts['-RRB-'], # right round bracket
 
@@ -133,7 +138,7 @@ def pos_density(doc):
         # 'num_BES': tag_counts['BES'], # auxiliary "be"
         # 'num_CC': tag_counts['CC'], # conjunction, coordinating
         # 'num_CD': tag_counts['CD'], # cardinal number
-        # 'num_DT': tag_counts['DT'], # 
+        # 'num_DT': tag_counts['DT'], #
         # 'num_EX': tag_counts['EX'], # existential there
         # 'num_FW': tag_counts['FW'], # foreign word
         # 'num_GW': tag_counts['GW'], # additional word in multi-word expression
@@ -240,10 +245,10 @@ def test_me():
                  'SQ': [10]
                 }
 
-    
+
 def init():
     global nlp
-    
+
     spacy.tokens.Doc.set_extension('features', default={}, force=True)
 
     nlp = spacy.load('en', disable=['nre'])
@@ -251,15 +256,15 @@ def init():
     nlp.add_pipe(extract_doc_features, name='extract_doc_features', first=False)
 
     test_me()
-    
-    
+
+
 def main(path):
     print('Reading DFs...')
     with pd.HDFStore(path) as store:
         text_df = store['text_df']
         train_df = store['train_df']
         test_df = store['test_df']
-    
+
     print('Extracting features...')
     docs = docify_text(text_df['text'])
     features_df = pd.DataFrame([doc._.features for doc in docs],
@@ -274,7 +279,7 @@ def main(path):
     assert len(text_df) == len(text_features_df)
     assert len(train_df) == len(test_features_df)
     assert len(test_df) == len(test_features_df)
-    
+
     print('Saving DFs...')
     with pd.HDFStore(path) as store:
         text_features_df = store['text_features_df']
