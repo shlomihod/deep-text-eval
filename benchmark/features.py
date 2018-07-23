@@ -6,7 +6,6 @@ from collections import Counter, deque, defaultdict
 import numpy as np
 import pandas as pd
 import spacy
-from spacy import displacy
 from benepar.spacy_plugin import BeneparComponent
 from tqdm import tqdm
 
