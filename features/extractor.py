@@ -269,7 +269,7 @@ def main(path):
     docs = docify_text(text_df['text'])
     features_df = pd.DataFrame([doc._.features for doc in docs],
                                  index=text_df.index)
-    features_df.columns = 'featues_' + features_df.columns
+    features_df.columns = 'feature_' + features_df.columns
 
     print('Merging features...')
     text_features_df = text_df.merge(features_df, how='inner', left_index=True, right_index=True)
