@@ -277,7 +277,7 @@ def main(path):
     test_features_df = test_df.merge(features_df, how='inner', left_index=True, right_index=True)
 
     assert len(text_df) == len(text_features_df)
-    assert len(train_df) == len(test_features_df)
+    assert len(train_df) == len(train_features_df)
     assert len(test_df) == len(test_features_df)
 
     print('Saving DFs...')
