@@ -11,6 +11,9 @@ from benepar.spacy_plugin import BeneparComponent
 from tqdm import tqdm
 
 
+nlp = None
+
+
 def _count_iter_items(iterable):
     """
     Consume an iterable not reading it into memory; return the number of items.
@@ -73,7 +76,7 @@ def celex_complexity(doc):
     # TODO: why do we call `_extract_constituent` twice?
     constituent_counter, _ = _extract_constituent(doc)
     return {
-        'numprep': constituent_counter["PP"],  # for every PP, there is exactly one preposition
+        'numprep': constituent_counter['PP'],  # for every PP, there is exactly one preposition
     }
 
 
@@ -176,6 +179,7 @@ def pos_density(doc):
 
 #######################################################
 
+
 EXTRACTORS = [
     syntactic_complexity,
     celex_complexity,
@@ -190,17 +194,66 @@ def extract_doc_features(doc):
     doc._.features = features
     return doc
 
-spacy.tokens.Doc.set_extension('features', default={}, force=True)
+
+def docify_text(texts, batch_size=100, n_threads=4, progress=tqdm):
+    return [doc for doc in nlp.pipe(progress(texts), batch_size=batch_size, n_threads=n_threads)]
+
+
+def test_me():
+    texts = ["""The angry bear chased the frightened little squirrel.
+    However, Chatterer said Buster thought the tree was tall.
+    To be or not to be?
+    Ah, I wouldn't do that to them!
+    What do you think I should do to the red car?
+    """]
+
+    doc = docify_text(texts, progress=iter)[0]
+
+    assert _count_iter_items(doc.sents) == 5
+
+    constituent_counter, constituent_lens = _extract_constituent(doc)
+
+    assert constituent_counter == {'S': 6,
+                                     'NP': 11,
+                                     'VP': 13,
+                                     'ADVP': 1,
+                                     'SBAR': 3,
+                                     'ADJP': 1,
+                                     'FRAG': 1,
+                                     'INTJ': 1,
+                                     'PP': 2,
+                                     'SBARQ': 1,
+                                     'WHNP': 1,
+                                     'SQ': 1
+                                  }
+
+    assert constituent_lens == {'S': [10, 12, 6, 4, 11, 7],
+                 'NP': [3, 4, 1, 1, 2, 1, 1, 1, 1, 1, 3],
+                 'VP': [5, 7, 5, 2, 2, 1, 2, 1, 6, 4, 8, 6, 5],
+                 'ADVP': [1],
+                 'SBAR': [6, 4, 7],
+                 'ADJP': [1],
+                 'FRAG': [8],
+                 'INTJ': [1],
+                 'PP': [2, 4],
+                 'SBARQ': [13],
+                 'WHNP': [1],
+                 'SQ': [10]
+                }
+
     
-nlp = spacy.load('en', disable=['nre'])
-nlp.add_pipe(BeneparComponent("benepar_en_small"))
-nlp.add_pipe(extract_doc_features, name='extract_doc_features', first=False)
+def init():
+    global nlp
+    
+    spacy.tokens.Doc.set_extension('features', default={}, force=True)
 
+    nlp = spacy.load('en', disable=['nre'])
+    nlp.add_pipe(BeneparComponent("benepar_en_small"))
+    nlp.add_pipe(extract_doc_features, name='extract_doc_features', first=False)
 
-def docify_text(texts, batch_size=100, n_threads=4):
-    return [doc for doc in nlp.pipe(tqdm(texts), batch_size=batch_size, n_threads=n_threads)]
-
-
+    test_me()
+    
+    
 def main(path):
     print('Reading DFs...')
     with pd.HDFStore(path) as store:
@@ -229,6 +282,8 @@ def main(path):
         train_features_df = store['train_features_df']
         test_features_df = store['test_features_df']
 
-    
+
+init()
+
 if __name__ == '__main__':
     import plac; plac.call(main)
