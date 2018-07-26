@@ -14,6 +14,8 @@ features_mask = text_features_df.columns.str.startswith('feature_')
 y_mask = text_features_df.columns == 'y'
 features_y_mask = features_mask | y_mask
 
+feature_names = text_features_df.columns[features_mask]
+
 X_all = text_features_df.loc[:, features_mask]
 y_all = text_features_df['y']
 y_all_onehot = to_categorical(y_all)
