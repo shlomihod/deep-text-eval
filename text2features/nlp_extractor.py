@@ -8,7 +8,8 @@ import pandas as pd
 import spacy
 from benepar.spacy_plugin import BeneparComponent
 from tqdm import tqdm
-
+from textacy import extract
+from textacy.text_stats import TextStats
 
 nlp = None
 
@@ -90,20 +91,21 @@ def pos_density(doc):
 
     n_sentences = _count_iter_items(doc.sents)
 
-    # we use tokens and not word as in the phd, maybe we should change it
-    n_tokens = sum([len(sent) for sent in doc.sents])
-
+    # OLD: we use tokens and not word as in the phd, maybe we should change it
+    # n_tokens = sum([len(sent) for sent in doc.sents])
+    n_words = _count_iter_items(extract.words(doc, filter_punct=True, filter_stops=False, filter_nums=False))
+    
     return {
         'num_comma': tag_counts[','] / n_sentences, # punctuation mark, comma / sentences
-        'nouns': (pos_counts['NOUN'] + pos_counts['PROPN']) / n_tokens, # (nouns + proper nouns)/all words
-        'propernouns': pos_counts['PROPN'] / n_tokens, # proper nouns/all words
-        'pronouns': (tag_counts['PRP'] + tag_counts['PRP$']) / n_tokens, # pronouns/all words
+        'nouns': (pos_counts['NOUN'] + pos_counts['PROPN']) / n_words, # (nouns + proper nouns)/all words
+        'propernouns': pos_counts['PROPN'] / n_words, # proper nouns/all words
+        'pronouns': (tag_counts['PRP'] + tag_counts['PRP$']) / n_words, # pronouns/all words
 
         # should we use ADP here?!?!
-        'conj': (pos_counts['CONJ'] + pos_counts['ADP']) / n_tokens,  # conjunctions/all words
+        'conj': (pos_counts['CONJ'] + pos_counts['ADP']) / n_words,  # conjunctions/all words
 
-        'adj': pos_counts['ADJ'] / n_tokens, # adjectives/all words
-        'ver': (pos_counts['VERB'] - tag_counts['MD']) / n_tokens, # non-modal verbs/all words
+        'adj': pos_counts['ADJ'] / n_words, # adjectives/all words
+        'ver': (pos_counts['VERB'] - tag_counts['MD']) / n_words, # non-modal verbs/all words
         'interj': pos_counts['INTJ'] / n_sentences, # interjections/total sentences
         'adverbs': pos_counts['ADV'] / n_sentences, # adverbs/total sentences
         'modals': tag_counts['MD'] / n_sentences, # modal verbs/total sentences
@@ -180,6 +182,8 @@ def pos_density(doc):
         # 'num_WRB': tag_counts['WRB'], # wh-adverb
         # 'num_XX': tag_counts['XX'], # unknown
 
+def readability_scores(doc):
+    return TextStats(doc).readability_stats.copy()
 
 #######################################################
 
@@ -187,7 +191,8 @@ def pos_density(doc):
 EXTRACTORS = [
     syntactic_complexity,
     celex_complexity,
-    pos_density
+    pos_density,
+    readability_scores
 ]
 
 
