@@ -1,0 +1,11 @@
+pandas
+keras
+spacy
+cython
+numpy
+nltk
+benepar
+sklearn
+umap-learn
+textstat
+textacy
