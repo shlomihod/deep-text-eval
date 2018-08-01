@@ -36,7 +36,7 @@ def get_newsela_api(part):
 def get_group_df():
     page_jsons = []
 
-    for page_number in tqdm(range(1, 3)):#itertools.count(start=1)):
+    for page_number in tqdm(itertools.count(start=1)):
     
         result = get_newsela_api('?page={}'.format(page_number)).json()
 
