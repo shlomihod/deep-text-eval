@@ -1,3 +1,4 @@
+import re
 import itertools
 from pprint import pprint
 
@@ -6,6 +7,9 @@ import requests
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 from scipy import stats
+
+
+HTML_TAG_RE = re.compile('<.*?>')
 
 RANDOM_STATE = 42
 MIN_N_CATEGORY_DATA = 30
@@ -68,7 +72,6 @@ def get_text_df(slugs):
     
     return text_df, errors_indices
 
-
 def remove_too_small_categories(text_df):
     category_counts = text_df['y_cat'].value_counts()
     categories_to_keep = category_counts.index[category_counts >= MIN_N_CATEGORY_DATA]
@@ -80,6 +83,10 @@ def remove_too_small_categories(text_df):
     
     text_df = text_df[text_df['y_cat'].isin(categories_to_keep)]
     return text_df
+
+
+def remove_html_tags(text):
+    return HTML_TAG_RE.sub(' ', text)
 
 
 def print_data_stats(text_df, train_df, test_df):
@@ -148,6 +155,9 @@ def prepare_corpus():
     text_df = remove_too_small_categories(text_df)
     print('#Texts =', len(text_df))
 
+    print('Removing HTML Tags...')
+    text_df['text'] = text_df['text'].apply(remove_html_tags)
+    
     print('Reset Index...')
     text_df = text_df.reset_index(drop=True)
 
