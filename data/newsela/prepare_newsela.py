@@ -9,7 +9,8 @@ from sklearn.model_selection import train_test_split
 from scipy import stats
 
 
-HTML_TAG_RE = re.compile('<.*?>')
+HTML_TAG_RE = re.compile('<.*?>', re.DOTALL)
+MARKDOWN_IMAGE_RE = re.compile('!{0,1}\[.*?\]\s?\(.*?\)', re.DOTALL)
 
 RANDOM_STATE = 42
 MIN_N_CATEGORY_DATA = 30
@@ -35,7 +36,7 @@ def get_newsela_api(part):
 def get_group_df():
     page_jsons = []
 
-    for page_number in tqdm(itertools.count(start=1)):
+    for page_number in tqdm(range(1, 3)):#itertools.count(start=1)):
     
         result = get_newsela_api('?page={}'.format(page_number)).json()
 
@@ -87,6 +88,10 @@ def remove_too_small_categories(text_df):
 
 def remove_html_tags(text):
     return HTML_TAG_RE.sub(' ', text)
+
+
+def remove_markdown_image_tags(text):
+    return MARKDOWN_IMAGE_RE.sub(' ', text)
 
 
 def print_data_stats(text_df, train_df, test_df):
@@ -155,9 +160,11 @@ def prepare_corpus():
     text_df = remove_too_small_categories(text_df)
     print('#Texts =', len(text_df))
 
-    print('Removing HTML Tags...')
-    text_df['text'] = text_df['text'].apply(remove_html_tags)
-    
+    print('Removing HTML Tags, Markdown Image Tags, and Extra Dashes...')
+    text_df['text'] = (text_df['text']
+         .apply(remove_html_tags)
+         .apply(remove_markdown_image_tags).str.replace('----', ' '))
+
     print('Reset Index...')
     text_df = text_df.reset_index(drop=True)
 
