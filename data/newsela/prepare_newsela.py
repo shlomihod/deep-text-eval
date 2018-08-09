@@ -26,10 +26,10 @@ class Not200Error(Exception):
 
 def get_newsela_api(part):
     r = requests.get(BASE_URL + part, headers=HEADERS)
-        
+
     if r.status_code != 200:
         raise Not200Error
-        
+
     return r
 
 
@@ -37,22 +37,22 @@ def get_group_df():
     page_jsons = []
 
     for page_number in tqdm(itertools.count(start=1)):
-    
+
         result = get_newsela_api('?page={}'.format(page_number)).json()
 
         if not result:
             break
-        
+
         page_jsons.append(result)
-    
+
     group_df = pd.concat(map(pd.DataFrame, page_jsons), sort=False)
-    
+
     return group_df
 
 
 def slug2articles(slug):
     r = get_newsela_api(slug)
-        
+
     return (pd.DataFrame(
         r.json()['articles'])
       .assign(slug=slug))
@@ -70,19 +70,19 @@ def get_text_df(slugs):
 
 
     text_df = pd.concat(articles)
-    
+
     return text_df, errors_indices
 
 def remove_too_small_categories(text_df):
-    category_counts = text_df['y_cat'].value_counts()
+    category_counts = text_df['y'].value_counts()
     categories_to_keep = category_counts.index[category_counts >= MIN_N_CATEGORY_DATA]
 
     print('Removed Data:')
     pprint(text_df[
-            ~text_df['y_cat'].isin(categories_to_keep)
-        ]['y_cat'].value_counts())
-    
-    text_df = text_df[text_df['y_cat'].isin(categories_to_keep)]
+            ~text_df['y'].isin(categories_to_keep)
+        ]['y'].value_counts())
+
+    text_df = text_df[text_df['y'].isin(categories_to_keep)]
     return text_df
 
 
@@ -97,28 +97,11 @@ def remove_markdown_image_tags(text):
 def print_data_stats(text_df, train_df, test_df):
     dfs = [text_df, train_df, test_df]
 
-    stats_d = {'name': ['text', 'train', 'test'],
-             '#': [len(df['y']) for df in dfs],
-             'min': [df['y'].min() for df in dfs],
-             'max': [df['y'].max() for df in dfs],
-             'mean': [df['y'].mean() for df in dfs],
-             'std': [df['y'].std() for df in dfs]
-            }
-    stats_df = pd.DataFrame(stats_d)
-    stats_df.set_index('name')
+    text_counts = text_df['y'].value_counts()
+    train_counts = train_df['y'].value_counts()
+    test_counts = test_df['y'].value_counts()
 
-    print('Continuous y')
-    pprint(stats_df)
-    print()
-    print('train-test Kolmogorov-Smirnov p-value', stats.ks_2samp(train_df['y'],
-                                                               test_df['y']).pvalue)
-    print()
-
-    text_counts = text_df['y_cat'].value_counts()
-    train_counts = train_df['y_cat'].value_counts()
-    test_counts = test_df['y_cat'].value_counts()
-
-    print('Discrete y_cat (by percentiles)')
+    print('Categorial y')
     print(pd.DataFrame({
         '#text': text_counts,
         '%text': (100 * text_counts / text_counts.sum()).round(2),
@@ -127,21 +110,48 @@ def print_data_stats(text_df, train_df, test_df):
         '#test': test_counts,
         '%test': (100 * test_counts / test_counts.sum()).round(2),
     }).sort_index())
-    
+
+    print()
+
+    stats_d = {'name': ['text', 'train', 'test'],
+             '#': [len(df['y_lexile']) for df in dfs],
+             'min': [df['y_lexile'].min() for df in dfs],
+             'max': [df['y_lexile'].max() for df in dfs],
+             'mean': [df['y_lexile'].mean() for df in dfs],
+             'std': [df['y_lexile'].std() for df in dfs]
+            }
+
+    stats_df = pd.DataFrame(stats_d)
+    stats_df.set_index('name')
+
+    print('Continuous y_lexile')
+    pprint(stats_df)
+    print()
+    print('train-test Kolmogorov-Smirnov p-value', stats.ks_2samp(train_df['y_lexile'],
+                                                               test_df['y_lexile']).pvalue)
+
+
 
 def prepare_corpus():
 
     print('Getting slugs...')
     group_df = get_group_df()
-    
+
     print('Filterig non english slugs...')
     print(group_df['language'].value_counts())
     group_df = group_df[group_df['language'] == 'en']
     print(group_df['language'].value_counts())
- 
+
+    # it makes a problem to the parser
+    # https://github.com/nikitakit/self-attentive-parser/issues/5
+    print('Removing US-Constitution Text...')
+    group_df = group_df[group_df['slug'] != 'US-Constitution']
+    print('#Groups =', len(group_df))
+
+
     print('Getting Texts...')
     text_df, errors_indices = get_text_df(group_df['slug'])
-    
+
     if errors_indices:
         print('Error Indices:', errors_indices)
 
@@ -149,17 +159,11 @@ def prepare_corpus():
         retry_text_df, retry_errors_indices = get_text_df(group_df.loc[errors_indices, 'slug'])
 
         print('Error Indices:', retry_errors_indices)
-        
+
         print('Concating Texts...')
         text_df = pd.concat([text_df, retry_text_df])
 
-    text_df = text_df.rename({'lexile_level': 'y', 'grade_level': 'y_cat'}, axis=1)
-    print('#Texts =', len(text_df))
-    
-    # it makes a problem to the parser
-    # https://github.com/nikitakit/self-attentive-parser/issues/5
-    print('Removing US-Constitution Text...')
-    text_df = text_df[text_df['slug'] != 'US-Constitution']
+    text_df = text_df.rename({'lexile_level': 'y_lexile', 'grade_level': 'y'}, axis=1)
     print('#Texts =', len(text_df))
 
     print('Removing Too Small Categories...')
@@ -178,22 +182,22 @@ def prepare_corpus():
     train_df, test_df = train_test_split(text_df,
                                      test_size=TEST_SIZE,
                                      shuffle=True,
-                                     stratify=text_df['y_cat'],
+                                     stratify=text_df['y'],
                                      random_state=RANDOM_STATE)
-    
+
     print_data_stats(text_df, train_df, test_df)
-    
+
     return text_df, train_df, test_df
 
 
 def main():
     text_df, train_df, test_df = prepare_corpus()
-    
+
     with pd.HDFStore('newsela.h5', mode='w') as store:
         store.put('text_df', text_df)
         store.put('train_df', train_df)
         store.put('test_df', test_df)
 
-        
+
 if __name__ == '__main__':
     main()

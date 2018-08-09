@@ -76,6 +76,8 @@ level  #text  %text  #train  %train  #test  %test
 #### Newsla
 
 ##### Levels
+Based on [Lexile](https://support.newsela.com/hc/en-us/articles/201218865-Grade-to-Lexile-Conversion-Table)
+
 ###### Continuous y
 ```
 300 - 1670
