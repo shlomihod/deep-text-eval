@@ -11,6 +11,9 @@ from tqdm import tqdm
 from textacy import extract
 from textacy.text_stats import TextStats
 
+BATCH_SIZE = 128 
+N_THREADS = 4
+
 nlp = None
 
 def _mean_with_empty(seq):
@@ -69,7 +72,7 @@ def syntactic_complexity(doc):
         'avgvpsize': _mean_with_empty(constituent_lens['VP']),  # average length of an VP
         'avgppsize': _mean_with_empty(constituent_lens['PP']),  # average length of an PP
 
-        	#wh-phrases/sentences
+        #wh-phrases/sentences
         'avgparsetreeheight': _mean_with_empty([_calc_height(sent) for sent in doc.sents]),  # average height of a parse Tree
 
         'numconstituents': sum(constituent_counter.values()) / n_sentences, #constituents/sentences
@@ -123,7 +126,7 @@ def pos_density(doc):
         'numvbg' : tag_counts['VBG'] / n_sentences, # VBG tags/total sentences
         'numvbn' : tag_counts['VBN'] / n_sentences, # VBN tags/total sentences
         'numvbp' : tag_counts['VBP'] / n_sentences, # VBP tags/total sentences
- 	}
+     }
 
         # 'num_-LRB-': tag_counts['-LRB-'], # left round bracket
         # 'num_-RRB-': tag_counts['-RRB-'], # right round bracket
@@ -182,8 +185,20 @@ def pos_density(doc):
         # 'num_WRB': tag_counts['WRB'], # wh-adverb
         # 'num_XX': tag_counts['XX'], # unknown
 
-def readability_scores(doc):
-    return TextStats(doc).readability_stats.copy()
+def readability_scores_building_blocks(doc):
+    counts = TextStats(doc).basic_counts.copy()
+    return {
+        'rs_sqrt_polysyllable/sents': np.sqrt(counts['n_polysyllable_words'] / counts['n_sents']),
+        'rs_sents/words': counts['n_sents'] / counts['n_words'],
+        'rs_syllables/words': counts['n_syllables'] / counts['n_words'],
+        'rs_chars/words': counts['n_chars'] / counts['n_words'],
+        'rs_long/words': counts['n_long_words'] / counts['n_words'],
+        'rs_polysyllable/words': counts['n_polysyllable_words'] / counts['n_words'],
+        'rs_monosyllable/words': counts['n_monosyllable_words'] / counts['n_words'],
+        # counts['n_words'] / counts['n_sents'] - already as senlen in syntactic_complexity
+    }
+
+
 
 #######################################################
 
@@ -192,7 +207,7 @@ EXTRACTORS = [
     syntactic_complexity,
     celex_complexity,
     pos_density,
-    readability_scores
+    readability_scores_building_blocks
 ]
 
 
@@ -204,8 +219,26 @@ def extract_doc_features(doc):
     return doc
 
 
-def docify_text(texts, batch_size=100, n_threads=4, progress=tqdm):
-    return [doc for doc in nlp.pipe(progress(texts), batch_size=batch_size, n_threads=n_threads)]
+def docify_text(texts, mode='auto', batch_size=BATCH_SIZE, n_threads=N_THREADS, progress=tqdm):
+    if mode == 'auto':
+        docs = [doc for doc in nlp.pipe(progress(texts), batch_size=batch_size, n_threads=n_threads)]
+
+    elif mode == 'manual':
+        docs = []
+        
+        for index, text in enumerate(progress(texts)):
+            try:
+                doc = nlp(text)
+            except:
+                print('Error @ {} :: {}'.format(index, ''))
+                import traceback
+                traceback.print_exc()
+                continue
+                      
+            docs.append(doc)
+                     
+    return docs
+        
 
 
 def test_me():
@@ -263,7 +296,10 @@ def init():
     test_me()
 
 
-def main(path):
+def main(path, mode='auto'):
+    
+    assert mode in ['auto', 'manual']
+    
     print('Reading DFs...')
     with pd.HDFStore(path) as store:
         text_df = store['text_df']
@@ -271,7 +307,7 @@ def main(path):
         test_df = store['test_df']
 
     print('Extracting features...')
-    docs = docify_text(text_df['text'])
+    docs = docify_text(text_df['text'], mode=mode)
     features_df = pd.DataFrame([doc._.features for doc in docs],
                                  index=text_df.index)
     features_df.columns = 'feature_' + features_df.columns
