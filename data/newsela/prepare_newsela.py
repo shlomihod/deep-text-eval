@@ -156,6 +156,12 @@ def prepare_corpus():
     text_df = text_df.rename({'lexile_level': 'y', 'grade_level': 'y_cat'}, axis=1)
     print('#Texts =', len(text_df))
     
+    # it makes a problem to the parser
+    # https://github.com/nikitakit/self-attentive-parser/issues/5
+    print('Removing US-Constitution Text...')
+    text_df = text_df[text_df['slug'] != 'US-Constitution']
+    print('#Texts =', len(text_df))
+
     print('Removing Too Small Categories...')
     text_df = remove_too_small_categories(text_df)
     print('#Texts =', len(text_df))
