@@ -142,6 +142,13 @@ def prepare_corpus():
     group_df = group_df[group_df['language'] == 'en']
     print(group_df['language'].value_counts())
 
+    # it makes a problem to the parser
+    # https://github.com/nikitakit/self-attentive-parser/issues/5
+    print('Removing US-Constitution Text...')
+    group_df = group_df[group_df['slug'] != 'US-Constitution']
+    print('#Groups =', len(group_df))
+
+
     print('Getting Texts...')
     text_df, errors_indices = get_text_df(group_df['slug'])
 
