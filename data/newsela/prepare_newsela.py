@@ -164,6 +164,7 @@ def prepare_corpus():
         text_df = pd.concat([text_df, retry_text_df])
 
     text_df = text_df.rename({'lexile_level': 'y_lexile', 'grade_level': 'y'}, axis=1)
+    text_df['y'] = text_df['y'].astype(int)
     print('#Texts =', len(text_df))
 
     print('Removing Too Small Categories...')
