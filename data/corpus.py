@@ -9,11 +9,11 @@ from keras.utils import to_categorical
 
 def load_corpus(corpus_name):
     
-    weebit_path = os.path.join(os.path.dirname(__file__), corpus_name, corpus_name + '.h5')
+    path = os.path.join(os.path.dirname(__file__), corpus_name, corpus_name + '.h5')
 
-    text_features_df = pd.read_hdf(weebit_path, 'text_features_df')
-    train_features_df = pd.read_hdf(weebit_path, 'train_features_df')
-    test_features_df = pd.read_hdf(weebit_path, 'test_features_df')
+    text_features_df = pd.read_hdf(path, 'text_features_df')
+    train_features_df = pd.read_hdf(path, 'train_features_df')
+    test_features_df = pd.read_hdf(path, 'test_features_df')
 
     features_mask = text_features_df.columns.str.startswith('feature_')
     y_mask = text_features_df.columns == 'y'
