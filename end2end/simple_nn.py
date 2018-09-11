@@ -1,6 +1,6 @@
 """
 Date: 06/09/2018
-Version: 1.1
+Version: 1.2
 Description: Text Classification using Simple neural network.
              (https://arxiv.org/abs/1404.2188)
 Python Version: 3.6
@@ -26,7 +26,7 @@ if __name__ == '__main__':
     embedding_dim = 100
     # Configuring the neural network
     model = Sequential()
-    model.add(Dense(1024, activation='relu', input_shape=(max_input_length,)))
+    model.add(Dense(vocabulary_size, activation='relu', input_shape=(max_input_length,)))
     model.add(Dropout(0.2))
     model.add(Dense(512, activation='relu'))
     model.add(Dropout(0.2))
