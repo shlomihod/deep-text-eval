@@ -1,6 +1,6 @@
 """
 Date: 06/09/2018
-Version: 1.2
+Version: 1.3
 Description: Text Classification using Simple neural network.
              (https://arxiv.org/abs/1404.2188)
 Python Version: 3.6
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     model.add(Dropout(0.2))
     model.add(Dense(256, activation='relu'))
     model.add(Dropout(0.2))
-    model.add(Dense(y_train.shape[1], activation='sigmoid'))
+    model.add(Dense(y_train.shape[1], activation='softmax'))
     model.summary()
     print("Model fitting - simple NN model")
     model.compile(loss='categorical_crossentropy',optimizer='rmsprop',metrics=['accuracy'])
