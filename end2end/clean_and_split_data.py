@@ -1,6 +1,6 @@
 """
 Date: 03/09/2018
-Version: 1.1
+Version: 1.2
 Description: 1) Cleans the Weebit preprocessed data corpus
              2) Return training and test data
 Python Version: 3.6
@@ -54,9 +54,9 @@ def clean_text(text):
     # Clean the text
     text = re.sub(r"[^A-Za-z0-9^,!.\/'+-=]", " ", text)
     text = text.split()
-    stemmer = SnowballStemmer('english')
-    stemmed_words = [stemmer.stem(word) for word in text]
-    text = " ".join(stemmed_words)
+    # stemmer = SnowballStemmer('english')
+    # stemmed_words = [stemmer.stem(word) for word in text]
+    # text = " ".join(stemmed_words)
     return text
 
 def tokenize_and_convert(df):
