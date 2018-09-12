@@ -1,6 +1,6 @@
 """
 Date: 03/09/2018
-Version: 1.2
+Version: 1.1
 Description: 1) Cleans the Weebit preprocessed data corpus
              2) Return training and test data
 Python Version: 3.6
@@ -93,7 +93,7 @@ def split_train_test_data(data,labels):
     print('Shape of data tensor:', data.shape)
     print('Shape of label tensor:', labels.shape)
     # Getting the splitting index for training and testing data
-    SPLIT_RATIO = 0.25
+    SPLIT_RATIO = 0.20
     indices = np.arange(data.shape[0])
     np.random.shuffle(indices)
     data = data[indices]
