@@ -1,4 +1,6 @@
-# Deep Text Eval (DTE)
+# Deep Text Eval (DTE) - Project in the Cognitive Systems Master Program
+
+by [Shlomi Hod](https://github.com/shlomihod), [Maximilian Seidler](https://github.com/maxseidler) and [Vageesh Saxena](https://github.com/vageeshSaxena).
 
 ## Problem
 A differentiable function that measures text complexity/readability will be beneficial as part of the loss function of neural network text simplification system. However, to our best knowledge, there are not such a differentiable function.
