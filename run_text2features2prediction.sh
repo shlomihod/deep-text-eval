@@ -21,11 +21,11 @@ alias nbx='jupyter nbconvert --execute --to notebook --inplace --ExecutePreproce
 
 export CUDA_VISIBLE_DEVICES=0
 
-cd ~/deep-text-eval/text2features
-python3 nlp_extractor.py "../data/$1/$1.h5"
+#cd ~/deep-text-eval/text2features
+#python3 nlp_extractor.py "../data/$1/$1.h5"
 
-cd ~/deep-text-eval/text2features/$1
-nbx features_analysis.ipynb
+#cd ~/deep-text-eval/text2features/$1
+#nbx features_analysis.ipynb
 
 cd ~/deep-text-eval/features2prediction/$1
 nbx classification.ipynb

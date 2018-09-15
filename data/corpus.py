@@ -40,7 +40,13 @@ def load_corpus(corpus_name):
 
     X_train = (X_train - train_mean) / train_std
     X_test = (X_test - train_mean) / train_std
-                      
+    
+    FEATURES_NAMES = {'POS_DENSITY': ['feature_' + name for name in ['num_comma', 'nouns', 'propernouns', 'pronouns', 'conj', 'adj', 'ver', 'interj', 'adverbs', 'modals', 'perpro' , 'whpro', 'numfuncwords', 'numdet', 'numvb' , 'numvbd', 'numvbg', 'numvbn', 'numvbp', 'numprep']],
+                  'SYNTACTIC_COMPLEXITY': ['feature_' + name for name in ['senlen', 'numnp', 'numpp', 'numvp', 'numsbar', 'numsbarq', 'numwh', 'avgnpsize', 'avgvpsize', 'avgppsize', 'avgparsetreeheight', 'numconstituents']],
+                  'READABILITY_SCORES': [name for name in X_train.columns if name.startswith('feature_rs_')],
+                 }
+
+
     return {'text_features_df': text_features_df,
             'features_mask': features_mask,
             'features_y_mask': features_y_mask,
@@ -57,4 +63,6 @@ def load_corpus(corpus_name):
             'X_test': X_test,
             'y_test': y_test,
             'y_test_onehot': y_test_onehot,
+            
+            'FEATURES_NAMES': FEATURES_NAMES,
            }

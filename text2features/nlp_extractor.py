@@ -76,16 +76,10 @@ def syntactic_complexity(doc):
         'avgparsetreeheight': _mean_with_empty([_calc_height(sent) for sent in doc.sents]),  # average height of a parse Tree
 
         'numconstituents': sum(constituent_counter.values()) / n_sentences, #constituents/sentences
-
-    }
-
-
-def celex_complexity(doc):
-    # TODO: why do we call `_extract_constituent` twice?
-    constituent_counter, _ = _extract_constituent(doc)
-    return {
         'numprep': constituent_counter['PP'],  # for every PP, there is exactly one preposition
+
     }
+
 
 
 def pos_density(doc):
@@ -205,7 +199,6 @@ def readability_scores_building_blocks(doc):
 
 EXTRACTORS = [
     syntactic_complexity,
-    celex_complexity,
     pos_density,
     readability_scores_building_blocks
 ]
