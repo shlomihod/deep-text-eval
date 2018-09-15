@@ -13,7 +13,7 @@ Leveraging a leveled corpus of articles into a real number readability score.
 
 
 ## Notebooks (partial list, please explore the repo)
-1. [Corpora Analysis](data/Corpora%20Analysis.ipynbz)
+1. [Corpora Analysis](data/Corpora%20Analysis.ipynb)
 2. [End2End Design](end2end/end_to_end_pipeline.ipynb)
 3. Stacked Design
 	1. [Features Analysis](text2features/weebit/features_analysis.ipynb)
