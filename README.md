@@ -11,8 +11,7 @@ Designing a differentiable readability measure, either by classic machine learni
 ## Learning Task
 Leveraging a leveled corpus of articles into a real number readability score.
 
-## Paper
-
+## [Paper](paper/Deep-Text-Eval.pdf)
 
 ## Notebooks (partial list, please explore the repo)
 1. [Corpora Analysis](data/Corpora%20Analysis.ipynb)
