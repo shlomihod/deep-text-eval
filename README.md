@@ -1,18 +1,33 @@
 # Deep Text Eval (DTE)
 
 ## Problem
-A differentiable function that measures text complexity/readability will be beneficial as part of the loss function of neural network text simplification system. However, to our best knowledge, there are not such a differentiable
-function.
+A differentiable function that measures text complexity/readability will be beneficial as part of the loss function of neural network text simplification system. However, to our best knowledge, there are not such a differentiable function.
 
 ## Basic Idea
-Train an RNN to measure the ext complexity/readability. RNN is differentiable by
-its nature. This RNN will be part of a future building block for the loss of a
-neural network text simplification system.
+Designing a differentiable readability measure, either by classic machine learning models or neural networks.
 
 ## Learning Task
-Leveraging a classification of articles into a real number readability score.
+Leveraging a leveled corpus of articles into a real number readability score.
+
+## Paper
+
+
+## Notebooks (partial list, please explore the repo)
+1. [Corpora Analysis](data/Corpora%20Analysis.ipynbz)
+2. [End2End Design](end2end/end_to_end_pipeline.ipynb)
+3. Stacked Design
+	1. [Features Analysis](text2features/weebit/features_analysis.ipynb)
+	2. Features2Prediction - [Model Selection](features2prediction/weebit/models-comparison.ipynb)
+	   1. [Classification Models](features2prediction/weebit/classification.ipynb)
+	   2. [Regression Models](features2prediction/weebit/regression.ipynb)
+	   3. [Ordinal Regression](features2prediction/weebit/ordinal-regression.ipynb)
+	3. [Feature Selection](features2prediction/weebit/features-selection.ipynb)
+	3. [Final Model in Tensorflow version](text2prediction-final/weebit/readability_measure_tensorflow.ipynb)
+
+
 
 ## Data
+In the paper we used the WeeBit corpus, however, we have also prepared other corpora, in English and German. All the corpora are described here. For access to the texts, please send an email to the authors.
 
 ### Structure
 Each corpus has its own HD5 file with the key `text_df` that contains the
