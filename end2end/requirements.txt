@@ -5,6 +5,6 @@ pandas == 0.20.3
 matplotlib == 2.2.3
 scikit-learn == 0.19.1
 keras == 2.2.2
-tensorflow == 1.10.0
+tensorflow == 2.11.1
 pydot == 1.2.4
 plotly == 3.1.1
